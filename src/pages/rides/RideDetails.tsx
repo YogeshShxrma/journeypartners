@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { BlurContainer } from '@/components/ui/BlurContainer';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/Badge';
+import { Badge } from '@/components/ui/badge';
 import { MapView } from '@/components/ui/MapView';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Calendar, Car, Clock, CreditCard, MapPin, MessageSquare, User, Clock8 } from 'lucide-react';

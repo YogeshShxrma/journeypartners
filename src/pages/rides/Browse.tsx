@@ -4,7 +4,7 @@ import { PageTransition } from '@/components/ui/PageTransition';
 import { BlurContainer } from '@/components/ui/BlurContainer';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/Badge';
+import { Badge } from '@/components/ui/badge';
 import { MapView } from '@/components/ui/MapView';
 import { Navbar } from '@/components/layout/Navbar';
 import { Search, Calendar, Filter, Clock, MapPin, User, Car, ArrowRight } from 'lucide-react';

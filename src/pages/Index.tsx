@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { BlurContainer } from '@/components/ui/BlurContainer';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/Badge';
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { MapView } from '@/components/ui/MapView';
 import { Navbar } from '@/components/layout/Navbar';
@@ -42,7 +41,6 @@ const Index = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Quick destinations (would come from user's history in a real app)
   const quickDestinations = [
     { id: 1, name: 'University', icon: '🏫' },
     { id: 2, name: 'Downtown', icon: '🏙️' },
@@ -50,7 +48,6 @@ const Index = () => {
     { id: 4, name: 'Library', icon: '📚' },
   ];
 
-  // Recent rides (would come from API in a real app)
   const recentRides = [
     {
       id: 1,
@@ -75,7 +72,6 @@ const Index = () => {
   return (
     <PageTransition>
       <div className="min-h-screen pb-24">
-        {/* Header */}
         <div className="p-5 bg-gradient-to-b from-primary/10 to-transparent">
           <div className="flex justify-between items-center mb-4">
             <div>
@@ -95,7 +91,6 @@ const Index = () => {
           </div>
         </div>
         
-        {/* Search ride form */}
         <div className="px-5 pt-0 pb-6 -mt-5">
           <BlurContainer className="p-5">
             <div className="space-y-4">
@@ -147,7 +142,6 @@ const Index = () => {
           </BlurContainer>
         </div>
         
-        {/* Quick destinations */}
         <div className="px-5 mb-6">
           <h2 className="text-lg font-semibold mb-3">Quick Destinations</h2>
           <div className="flex space-x-3 overflow-x-auto pb-2 no-scrollbar">
@@ -167,7 +161,6 @@ const Index = () => {
           </div>
         </div>
         
-        {/* Map section */}
         <div className="px-5 mb-6">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-semibold">Around You</h2>
@@ -178,7 +171,6 @@ const Index = () => {
           <MapView interactive={true} />
         </div>
         
-        {/* Recent/Upcoming rides */}
         <div className="px-5 mb-6">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-semibold">Recent Rides</h2>
