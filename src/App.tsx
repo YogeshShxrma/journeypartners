@@ -10,6 +10,7 @@ import Login from "./pages/auth/Login";
 import Signup from "./pages/auth/Signup";
 import Browse from "./pages/rides/Browse";
 import RideDetails from "./pages/rides/RideDetails";
+import RideConfirmed from "./pages/rides/confirmed";
 import Profile from "./pages/Profile";
 import MapPage from "./pages/MapPage";
 import NotFound from "./pages/NotFound";
@@ -28,6 +29,7 @@ const AnimatedRoutes = () => {
         <Route path="/auth/signup" element={<Signup />} />
         <Route path="/rides/browse" element={<Browse />} />
         <Route path="/rides/:id" element={<RideDetails />} />
+        <Route path="/rides/confirmed" element={<RideConfirmed />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/map" element={<MapPage />} />
         <Route path="*" element={<NotFound />} />

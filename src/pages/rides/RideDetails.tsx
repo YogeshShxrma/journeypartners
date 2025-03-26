@@ -4,8 +4,9 @@ import { BlurContainer } from '@/components/ui/BlurContainer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MapView } from '@/components/ui/MapView';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Calendar, Car, Clock, CreditCard, MapPin, MessageSquare, User, Clock8 } from 'lucide-react';
+import { ArrowLeft, Calendar, Car, Clock, CreditCard, MapPin, MessageSquare, User, Clock8, Users, IndianRupee, Percent } from 'lucide-react';
 import { toast } from 'sonner';
 
 // Sample ride data
@@ -27,12 +28,35 @@ const sampleRide = {
   carColor: 'Blue',
   licensePlate: 'ABC123',
   description: 'Regular commute from campus to downtown. I take this route every weekday morning.',
+  passengers: [
+    { id: 1, name: 'You' },
+    { id: 2, name: 'Rahul M.' }
+  ],
+  fuelCost: '₹150',
+  tollCost: '₹50',
+  commission: '₹12.50'
 };
+
+// Payment method options
+const paymentMethods = [
+  { id: 'paytm', name: 'Paytm', icon: '₹' },
+  { id: 'gpay', name: 'Google Pay', icon: 'G' },
+  { id: 'phonepe', name: 'PhonePe', icon: 'P' },
+  { id: 'card', name: 'Credit/Debit Card', icon: '💳' }
+];
 
 export default function RideDetails() {
   const params = useParams();
   const navigate = useNavigate();
   const [isBooking, setIsBooking] = useState(false);
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [showSplitDialog, setShowSplitDialog] = useState(false);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('');
+  const [splitEvenly, setSplitEvenly] = useState(true);
+  const [customSplits, setCustomSplits] = useState([
+    { id: 1, name: 'You', percentage: 50 },
+    { id: 2, name: 'Rahul M.', percentage: 50 }
+  ]);
   
   // In a real app, you would fetch ride details based on params.id
   const ride = sampleRide;
@@ -46,6 +70,34 @@ export default function RideDetails() {
       toast.success('Ride booked successfully!');
       navigate('/rides/confirmed');
     }, 1500);
+  };
+
+  const handlePayFuel = () => {
+    setShowPaymentDialog(true);
+  };
+
+  const handleCompletePayment = () => {
+    setShowPaymentDialog(false);
+    toast.success(`Payment of ${ride.fuelCost} processed through ${selectedPaymentMethod}. Commission: ${ride.commission}`);
+  };
+
+  const handleSplitCost = () => {
+    setShowSplitDialog(true);
+  };
+
+  const handleCompleteSplit = () => {
+    setShowSplitDialog(false);
+    toast.success('Cost split request sent to passengers');
+  };
+
+  const updateSplitPercentage = (id, newPercentage) => {
+    const newSplits = customSplits.map(split => {
+      if (split.id === id) {
+        return { ...split, percentage: newPercentage };
+      }
+      return split;
+    });
+    setCustomSplits(newSplits);
   };
   
   return (
@@ -84,6 +136,7 @@ export default function RideDetails() {
           </div>
           
           <BlurContainer className="p-4 mb-4">
+            {/* Driver profile section */}
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center">
                 <div className="h-12 w-12 rounded-full bg-secondary flex items-center justify-center mr-3">
@@ -120,6 +173,7 @@ export default function RideDetails() {
           </BlurContainer>
           
           <BlurContainer className="p-4 mb-4">
+            {/* Journey details section */}
             <h3 className="font-medium mb-3">Journey Details</h3>
             
             <div className="flex">
@@ -156,6 +210,53 @@ export default function RideDetails() {
                   </div>
                 </div>
               </div>
+            </div>
+          </BlurContainer>
+
+          {/* New: Passengers section */}
+          <BlurContainer className="p-4 mb-4">
+            <h3 className="font-medium mb-3">Passengers</h3>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center">
+                <Users className="h-4 w-4 text-muted-foreground mr-2" />
+                <span>{ride.passengers.length} passengers</span>
+              </div>
+              <Button variant="outline" size="sm" onClick={handleSplitCost}>
+                Split Costs
+              </Button>
+            </div>
+            
+            <div className="space-y-2">
+              {ride.passengers.map(passenger => (
+                <div key={passenger.id} className="flex items-center">
+                  <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center mr-2">
+                    <User className="h-4 w-4 text-primary" />
+                  </div>
+                  <span className="text-sm">{passenger.name}</span>
+                </div>
+              ))}
+            </div>
+          </BlurContainer>
+
+          {/* Fuel Payment section */}
+          <BlurContainer className="p-4 mb-4">
+            <h3 className="font-medium mb-3">Fuel & Tolls</h3>
+            <div className="flex justify-between items-center mb-3">
+              <div className="flex items-center">
+                <IndianRupee className="h-4 w-4 text-muted-foreground mr-2" />
+                <span>Fuel: {ride.fuelCost}</span>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handlePayFuel}
+              >
+                Pay Directly
+              </Button>
+            </div>
+            <div className="flex items-center text-sm text-muted-foreground">
+              <Percent className="h-3 w-3 mr-1" />
+              <span>Service fee: {ride.commission} (5% of transaction)</span>
             </div>
           </BlurContainer>
           
@@ -211,6 +312,154 @@ export default function RideDetails() {
           </div>
         </div>
       </div>
+
+      {/* Payment Dialog */}
+      <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Pay for Fuel</DialogTitle>
+            <DialogDescription>
+              Pay directly for fuel and tolls. A 5% service fee will be applied.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <h4 className="text-sm font-medium">Select payment method:</h4>
+            <div className="grid grid-cols-2 gap-2">
+              {paymentMethods.map(method => (
+                <Button
+                  key={method.id}
+                  variant={selectedPaymentMethod === method.id ? "default" : "outline"}
+                  className="justify-start"
+                  onClick={() => setSelectedPaymentMethod(method.id)}
+                >
+                  <div className="mr-2 h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center">
+                    {method.icon}
+                  </div>
+                  {method.name}
+                </Button>
+              ))}
+            </div>
+            
+            <div className="border rounded-lg p-3 mt-2">
+              <div className="flex justify-between items-center text-sm mb-2">
+                <span>Fuel cost</span>
+                <span>{ride.fuelCost}</span>
+              </div>
+              <div className="flex justify-between items-center text-sm mb-2">
+                <span>Tolls</span>
+                <span>{ride.tollCost}</span>
+              </div>
+              <div className="flex justify-between items-center text-sm mb-2">
+                <span>Service fee (5%)</span>
+                <span>{ride.commission}</span>
+              </div>
+              <div className="flex justify-between items-center font-medium mt-3 pt-3 border-t">
+                <span>Total</span>
+                <span className="text-primary">₹212.50</span>
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowPaymentDialog(false)}>Cancel</Button>
+            <Button 
+              disabled={!selectedPaymentMethod} 
+              onClick={handleCompletePayment}
+            >
+              Pay ₹212.50
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cost Split Dialog */}
+      <Dialog open={showSplitDialog} onOpenChange={setShowSplitDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Split Ride Costs</DialogTitle>
+            <DialogDescription>
+              Decide how to split costs among passengers
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-medium">Splitting method:</h4>
+              <div className="flex items-center space-x-2">
+                <Button 
+                  variant={splitEvenly ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSplitEvenly(true)}
+                >
+                  Even Split
+                </Button>
+                <Button 
+                  variant={!splitEvenly ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSplitEvenly(false)}
+                >
+                  Custom Split
+                </Button>
+              </div>
+            </div>
+            
+            <div className="border rounded-lg p-3">
+              {splitEvenly ? (
+                <div className="space-y-3">
+                  {ride.passengers.map(passenger => (
+                    <div key={passenger.id} className="flex justify-between items-center">
+                      <div className="flex items-center">
+                        <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center mr-2">
+                          <User className="h-4 w-4 text-primary" />
+                        </div>
+                        <span>{passenger.name}</span>
+                      </div>
+                      <span className="font-medium">₹125</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {customSplits.map(split => (
+                    <div key={split.id} className="flex justify-between items-center">
+                      <div className="flex items-center">
+                        <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center mr-2">
+                          <User className="h-4 w-4 text-primary" />
+                        </div>
+                        <span>{split.name}</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          value={split.percentage}
+                          onChange={(e) => updateSplitPercentage(split.id, parseInt(e.target.value))}
+                          className="w-24"
+                        />
+                        <span className="font-medium w-16 text-right">{split.percentage}%</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              <div className="flex justify-between items-center font-medium mt-3 pt-3 border-t">
+                <span>Total</span>
+                <span className="text-primary">{ride.price}</span>
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSplitDialog(false)}>Cancel</Button>
+            <Button onClick={handleCompleteSplit}>
+              Send Split Request
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </PageTransition>
   );
 }
