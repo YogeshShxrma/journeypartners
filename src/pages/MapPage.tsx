@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { MapView } from '@/components/ui/MapView';

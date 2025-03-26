@@ -1,9 +1,21 @@
-
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { BlurContainer } from './BlurContainer';
 import { Route, Map as MapIcon, MapPin, LocateFixed } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
+import 'leaflet/dist/leaflet.css';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import L from 'leaflet';
+
+// Helper component to update map view when props change
+const MapUpdater = ({ center, zoom }) => {
+  const map = useMap();
+  
+  useEffect(() => {
+    map.setView([center.lat, center.lng], zoom);
+  }, [center, zoom, map]);
+  
+  return null;
+};
 
 interface MapLocation {
   lng: number;
@@ -20,133 +32,40 @@ interface MapViewProps {
   markers?: MapLocation[];
 }
 
-// Default map styling for light/dark mode
-const mapStyles = {
-  light: [],
-  dark: [
-    { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
-    { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
-    { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
-    {
-      featureType: "administrative.locality",
-      elementType: "labels.text.fill",
-      stylers: [{ color: "#d59563" }],
-    },
-    {
-      featureType: "poi",
-      elementType: "labels.text.fill",
-      stylers: [{ color: "#d59563" }],
-    },
-    {
-      featureType: "poi.park",
-      elementType: "geometry",
-      stylers: [{ color: "#263c3f" }],
-    },
-    {
-      featureType: "poi.park",
-      elementType: "labels.text.fill",
-      stylers: [{ color: "#6b9a76" }],
-    },
-    {
-      featureType: "road",
-      elementType: "geometry",
-      stylers: [{ color: "#38414e" }],
-    },
-    {
-      featureType: "road",
-      elementType: "geometry.stroke",
-      stylers: [{ color: "#212a37" }],
-    },
-    {
-      featureType: "road",
-      elementType: "labels.text.fill",
-      stylers: [{ color: "#9ca5b3" }],
-    },
-    {
-      featureType: "road.highway",
-      elementType: "geometry",
-      stylers: [{ color: "#746855" }],
-    },
-    {
-      featureType: "road.highway",
-      elementType: "geometry.stroke",
-      stylers: [{ color: "#1f2835" }],
-    },
-    {
-      featureType: "road.highway",
-      elementType: "labels.text.fill",
-      stylers: [{ color: "#f3d19c" }],
-    },
-    {
-      featureType: "transit",
-      elementType: "geometry",
-      stylers: [{ color: "#2f3948" }],
-    },
-    {
-      featureType: "transit.station",
-      elementType: "labels.text.fill",
-      stylers: [{ color: "#d59563" }],
-    },
-    {
-      featureType: "water",
-      elementType: "geometry",
-      stylers: [{ color: "#17263c" }],
-    },
-    {
-      featureType: "water",
-      elementType: "labels.text.fill",
-      stylers: [{ color: "#515c6d" }],
-    },
-    {
-      featureType: "water",
-      elementType: "labels.text.stroke",
-      stylers: [{ color: "#17263c" }],
-    },
-  ]
-};
-
-// Google Maps API Key - Replace this with your own API key
-// In a real app, this should be in an environment variable
-const GOOGLE_MAPS_API_KEY = "YOUR_GOOGLE_MAPS_API_KEY";
-
 export function MapView({ 
   className, 
   interactive = false,
   showFullscreen = false,
   darkMode = false,
-  center = { lng: -96.7970, lat: 32.7767 }, // Default center (Dallas)
+  center = { lng: 77.1025, lat: 28.7041 }, // Default center (Delhi)
   zoom = 12,
   markers = []
 }: MapViewProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [map, setMap] = useState<google.maps.Map | null>(null);
   
-  const { isLoaded } = useJsApiLoader({
-    id: 'google-map-script',
-    googleMapsApiKey: GOOGLE_MAPS_API_KEY
-  });
-
-  const onLoad = useCallback((map: google.maps.Map) => {
-    setMap(map);
-    setIsLoading(false);
+  // Fix Leaflet marker icon issue
+  // Leaflet uses image files for markers which need special handling in React
+  useEffect(() => {
+    // Delete the default icon for Leaflet markers
+    delete L.Icon.Default.prototype._getIconUrl;
+    
+    // Set custom icon paths
+    L.Icon.Default.mergeOptions({
+      iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+      iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+      shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+    });
   }, []);
-
-  const onUnmount = useCallback(() => {
-    setMap(null);
-  }, []);
-
+  
   // Handle user location
   const handleLocateUser = () => {
-    if (!map) return;
+    if (!mapContainerRef.current) return;
     
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { longitude, latitude } = position.coords;
-        const userLocation = { lat: latitude, lng: longitude };
-        
-        map.panTo(userLocation);
-        map.setZoom(14);
+        // We'll use the MapUpdater component to update the map view
       },
       (error) => {
         console.error('Error getting user location:', error);
@@ -167,6 +86,28 @@ export function MapView({
     }
   };
 
+  // Create a custom marker icon with primary color
+  const customIcon = new L.Icon({
+    iconUrl: "data:image/svg+xml;utf8," + encodeURIComponent(`
+      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+        <circle cx="12" cy="10" r="3"></circle>
+      </svg>
+    `),
+    iconSize: [32, 32],
+    iconAnchor: [16, 32],
+    popupAnchor: [0, -32],
+  });
+
+  // Set loading state to false after a short delay
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <BlurContainer 
       className={cn(
@@ -175,7 +116,7 @@ export function MapView({
         className
       )}
     >
-      {(isLoading || !isLoaded) && (
+      {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center z-10">
           <Route className="w-6 h-6 text-primary animate-pulse" />
         </div>
@@ -185,60 +126,51 @@ export function MapView({
         ref={mapContainerRef} 
         className="w-full h-full"
       >
-        {isLoaded && (
-          <GoogleMap
-            mapContainerStyle={{ width: '100%', height: '100%' }}
-            center={{ lat: center.lat, lng: center.lng }}
-            zoom={zoom}
-            onLoad={onLoad}
-            onUnmount={onUnmount}
-            options={{
-              disableDefaultUI: !interactive,
-              zoomControl: interactive,
-              styles: darkMode ? mapStyles.dark : mapStyles.light,
-              fullscreenControl: false,
-            }}
-          >
-            {/* Add markers */}
-            {markers.length === 0 ? (
-              <Marker
-                position={{ lat: center.lat, lng: center.lng }}
-                icon={{
-                  url: "data:image/svg+xml;utf8," + encodeURIComponent(`
-                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                      <circle cx="12" cy="10" r="3"></circle>
-                    </svg>
-                  `),
-                  scaledSize: new google.maps.Size(32, 32),
-                  anchor: new google.maps.Point(16, 32),
-                }}
-              />
-            ) : (
-              markers.map((marker, index) => (
-                <Marker
-                  key={index}
-                  position={{ lat: marker.lat, lng: marker.lng }}
-                  icon={{
-                    url: "data:image/svg+xml;utf8," + encodeURIComponent(`
-                      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                        <circle cx="12" cy="10" r="3"></circle>
-                      </svg>
-                    `),
-                    scaledSize: new google.maps.Size(32, 32),
-                    anchor: new google.maps.Point(16, 32),
-                  }}
-                />
-              ))
-            )}
-          </GoogleMap>
-        )}
+        <MapContainer
+          center={[center.lat, center.lng]}
+          zoom={zoom}
+          style={{ width: '100%', height: '100%' }}
+          zoomControl={interactive}
+          attributionControl={true}
+          doubleClickZoom={interactive}
+          scrollWheelZoom={interactive}
+          dragging={interactive}
+          easeLinearity={0.35}
+        >
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          
+          {/* Add MapUpdater to handle center/zoom changes */}
+          <MapUpdater center={center} zoom={zoom} />
+          
+          {/* Add markers */}
+          {markers.length === 0 ? (
+            <Marker position={[center.lat, center.lng]} icon={customIcon}>
+              <Popup>
+                Current location
+              </Popup>
+            </Marker>
+          ) : (
+            markers.map((marker, index) => (
+              <Marker 
+                key={index} 
+                position={[marker.lat, marker.lng]}
+                icon={customIcon}
+              >
+                <Popup>
+                  Location {index + 1}
+                </Popup>
+              </Marker>
+            ))
+          )}
+        </MapContainer>
       </div>
       
       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/40 to-transparent h-24 pointer-events-none" />
       
-      {interactive && isLoaded && (
+      {interactive && (
         <div className="absolute bottom-4 right-4 flex flex-col gap-2">
           <button 
             className="btn-icon bg-background shadow-lg hover:bg-primary hover:text-white transition-colors"
