@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { BlurContainer } from '@/components/ui/BlurContainer';
@@ -19,7 +18,7 @@ const sampleRide = {
   date: 'Today, August 24',
   time: '9:30 AM',
   arrivalTime: '10:05 AM',
-  price: '$3.50',
+  price: '₹250',
   seats: 3,
   seatsAvailable: 2,
   rating: 4.8,
@@ -165,11 +164,11 @@ export default function RideDetails() {
             
             <div className="flex justify-between items-center text-sm mb-2">
               <span>Base fare</span>
-              <span>$3.00</span>
+              <span>₹200</span>
             </div>
             <div className="flex justify-between items-center text-sm mb-2">
               <span>Service fee</span>
-              <span>$0.50</span>
+              <span>₹50</span>
             </div>
             <div className="flex justify-between items-center font-medium mt-3 pt-3 border-t">
               <span>Total</span>

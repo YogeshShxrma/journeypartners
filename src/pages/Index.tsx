@@ -56,7 +56,7 @@ const Index = () => {
       to: 'Downtown',
       date: 'Today',
       time: '9:30 AM',
-      price: '$3.50',
+      price: '₹250',
     },
     {
       id: 2,
@@ -65,7 +65,7 @@ const Index = () => {
       to: 'Tech District',
       date: 'Today',
       time: '10:15 AM',
-      price: '$4.25',
+      price: '₹300',
     },
   ];
 

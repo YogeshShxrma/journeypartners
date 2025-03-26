@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { BlurContainer } from '@/components/ui/BlurContainer';
@@ -41,7 +40,7 @@ export default function Profile() {
       from: 'North Campus',
       to: 'Downtown',
       date: 'Yesterday',
-      price: '$3.50',
+      price: '₹250',
       driver: true,
     },
     {
@@ -49,7 +48,7 @@ export default function Profile() {
       from: 'Downtown',
       to: 'North Campus',
       date: 'August 21',
-      price: '$4.25',
+      price: '₹300',
       driver: false,
     },
   ];
