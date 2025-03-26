@@ -11,6 +11,7 @@ import Signup from "./pages/auth/Signup";
 import Browse from "./pages/rides/Browse";
 import RideDetails from "./pages/rides/RideDetails";
 import Profile from "./pages/Profile";
+import MapPage from "./pages/MapPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const AnimatedRoutes = () => {
         <Route path="/rides/browse" element={<Browse />} />
         <Route path="/rides/:id" element={<RideDetails />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/map" element={<MapPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AnimatePresence>
