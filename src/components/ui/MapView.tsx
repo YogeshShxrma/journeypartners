@@ -1,14 +1,9 @@
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { BlurContainer } from './BlurContainer';
-import { Route, Map, MapPin, LocateFixed } from 'lucide-react';
+import { Route, Map as MapIcon, MapPin, LocateFixed } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
-
-// Mapbox public token - in a real app, you would store this in environment variables
-// This is a public token so it's ok to include in the code
-mapboxgl.accessToken = 'pk.eyJ1IjoibG92YWJsZWFpIiwiYSI6ImNsbGkwZXd4ZjFtOXgzZm16aWR1OWsxN2kifQ.Qn3gBTRkViBLpBISgwSvug';
+import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 
 interface MapLocation {
   lng: number;
@@ -25,6 +20,95 @@ interface MapViewProps {
   markers?: MapLocation[];
 }
 
+// Default map styling for light/dark mode
+const mapStyles = {
+  light: [],
+  dark: [
+    { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
+    { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
+    { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
+    {
+      featureType: "administrative.locality",
+      elementType: "labels.text.fill",
+      stylers: [{ color: "#d59563" }],
+    },
+    {
+      featureType: "poi",
+      elementType: "labels.text.fill",
+      stylers: [{ color: "#d59563" }],
+    },
+    {
+      featureType: "poi.park",
+      elementType: "geometry",
+      stylers: [{ color: "#263c3f" }],
+    },
+    {
+      featureType: "poi.park",
+      elementType: "labels.text.fill",
+      stylers: [{ color: "#6b9a76" }],
+    },
+    {
+      featureType: "road",
+      elementType: "geometry",
+      stylers: [{ color: "#38414e" }],
+    },
+    {
+      featureType: "road",
+      elementType: "geometry.stroke",
+      stylers: [{ color: "#212a37" }],
+    },
+    {
+      featureType: "road",
+      elementType: "labels.text.fill",
+      stylers: [{ color: "#9ca5b3" }],
+    },
+    {
+      featureType: "road.highway",
+      elementType: "geometry",
+      stylers: [{ color: "#746855" }],
+    },
+    {
+      featureType: "road.highway",
+      elementType: "geometry.stroke",
+      stylers: [{ color: "#1f2835" }],
+    },
+    {
+      featureType: "road.highway",
+      elementType: "labels.text.fill",
+      stylers: [{ color: "#f3d19c" }],
+    },
+    {
+      featureType: "transit",
+      elementType: "geometry",
+      stylers: [{ color: "#2f3948" }],
+    },
+    {
+      featureType: "transit.station",
+      elementType: "labels.text.fill",
+      stylers: [{ color: "#d59563" }],
+    },
+    {
+      featureType: "water",
+      elementType: "geometry",
+      stylers: [{ color: "#17263c" }],
+    },
+    {
+      featureType: "water",
+      elementType: "labels.text.fill",
+      stylers: [{ color: "#515c6d" }],
+    },
+    {
+      featureType: "water",
+      elementType: "labels.text.stroke",
+      stylers: [{ color: "#17263c" }],
+    },
+  ]
+};
+
+// Google Maps API Key - Replace this with your own API key
+// In a real app, this should be in an environment variable
+const GOOGLE_MAPS_API_KEY = "YOUR_GOOGLE_MAPS_API_KEY";
+
 export function MapView({ 
   className, 
   interactive = false,
@@ -35,80 +119,34 @@ export function MapView({
   markers = []
 }: MapViewProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<mapboxgl.Map | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [map, setMap] = useState<google.maps.Map | null>(null);
+  
+  const { isLoaded } = useJsApiLoader({
+    id: 'google-map-script',
+    googleMapsApiKey: GOOGLE_MAPS_API_KEY
+  });
 
-  // Initialize map
-  useEffect(() => {
-    if (!mapContainerRef.current) return;
-    
-    mapRef.current = new mapboxgl.Map({
-      container: mapContainerRef.current,
-      style: darkMode ? 'mapbox://styles/mapbox/dark-v11' : 'mapbox://styles/mapbox/light-v11',
-      center: [center.lng, center.lat],
-      zoom: zoom,
-      attributionControl: false
-    });
+  const onLoad = useCallback((map: google.maps.Map) => {
+    setMap(map);
+    setIsLoading(false);
+  }, []);
 
-    // Add navigation control if interactive
-    if (interactive) {
-      mapRef.current.addControl(
-        new mapboxgl.NavigationControl({ showCompass: false }),
-        'bottom-right'
-      );
-    }
-
-    // Add markers
-    if (markers.length === 0) {
-      // Add default center marker if no markers provided
-      new mapboxgl.Marker({
-        color: '#f43f5e', // primary color
-      })
-        .setLngLat([center.lng, center.lat])
-        .addTo(mapRef.current);
-    } else {
-      // Add all provided markers
-      markers.forEach(marker => {
-        new mapboxgl.Marker({
-          color: '#f43f5e', // primary color
-        })
-          .setLngLat([marker.lng, marker.lat])
-          .addTo(mapRef.current);
-      });
-    }
-
-    // Map loaded event
-    mapRef.current.on('load', () => {
-      setIsLoading(false);
-    });
-
-    // Cleanup
-    return () => {
-      if (mapRef.current) {
-        mapRef.current.remove();
-      }
-    };
-  }, [center.lng, center.lat, zoom, darkMode, interactive, markers]);
+  const onUnmount = useCallback(() => {
+    setMap(null);
+  }, []);
 
   // Handle user location
   const handleLocateUser = () => {
-    if (!mapRef.current) return;
+    if (!map) return;
     
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { longitude, latitude } = position.coords;
-        mapRef.current?.flyTo({
-          center: [longitude, latitude],
-          zoom: 14,
-          essential: true
-        });
+        const userLocation = { lat: latitude, lng: longitude };
         
-        // Add marker at user location
-        new mapboxgl.Marker({
-          color: '#f43f5e',
-        })
-          .setLngLat([longitude, latitude])
-          .addTo(mapRef.current!);
+        map.panTo(userLocation);
+        map.setZoom(14);
       },
       (error) => {
         console.error('Error getting user location:', error);
@@ -118,15 +156,14 @@ export function MapView({
 
   // Handle fullscreen
   const handleFullscreen = () => {
-    if (!mapRef.current) return;
-    if (mapContainerRef.current) {
-      if (!document.fullscreenElement) {
-        mapContainerRef.current.requestFullscreen().catch(err => {
-          console.error(`Error attempting to enable fullscreen: ${err.message}`);
-        });
-      } else {
-        document.exitFullscreen();
-      }
+    if (!mapContainerRef.current) return;
+    
+    if (!document.fullscreenElement) {
+      mapContainerRef.current.requestFullscreen().catch(err => {
+        console.error(`Error attempting to enable fullscreen: ${err.message}`);
+      });
+    } else {
+      document.exitFullscreen();
     }
   };
 
@@ -138,7 +175,7 @@ export function MapView({
         className
       )}
     >
-      {isLoading && (
+      {(isLoading || !isLoaded) && (
         <div className="absolute inset-0 flex items-center justify-center z-10">
           <Route className="w-6 h-6 text-primary animate-pulse" />
         </div>
@@ -147,11 +184,61 @@ export function MapView({
       <div 
         ref={mapContainerRef} 
         className="w-full h-full"
-      />
+      >
+        {isLoaded && (
+          <GoogleMap
+            mapContainerStyle={{ width: '100%', height: '100%' }}
+            center={{ lat: center.lat, lng: center.lng }}
+            zoom={zoom}
+            onLoad={onLoad}
+            onUnmount={onUnmount}
+            options={{
+              disableDefaultUI: !interactive,
+              zoomControl: interactive,
+              styles: darkMode ? mapStyles.dark : mapStyles.light,
+              fullscreenControl: false,
+            }}
+          >
+            {/* Add markers */}
+            {markers.length === 0 ? (
+              <Marker
+                position={{ lat: center.lat, lng: center.lng }}
+                icon={{
+                  url: "data:image/svg+xml;utf8," + encodeURIComponent(`
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                      <circle cx="12" cy="10" r="3"></circle>
+                    </svg>
+                  `),
+                  scaledSize: new google.maps.Size(32, 32),
+                  anchor: new google.maps.Point(16, 32),
+                }}
+              />
+            ) : (
+              markers.map((marker, index) => (
+                <Marker
+                  key={index}
+                  position={{ lat: marker.lat, lng: marker.lng }}
+                  icon={{
+                    url: "data:image/svg+xml;utf8," + encodeURIComponent(`
+                      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                        <circle cx="12" cy="10" r="3"></circle>
+                      </svg>
+                    `),
+                    scaledSize: new google.maps.Size(32, 32),
+                    anchor: new google.maps.Point(16, 32),
+                  }}
+                />
+              ))
+            )}
+          </GoogleMap>
+        )}
+      </div>
       
       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/40 to-transparent h-24 pointer-events-none" />
       
-      {interactive && (
+      {interactive && isLoaded && (
         <div className="absolute bottom-4 right-4 flex flex-col gap-2">
           <button 
             className="btn-icon bg-background shadow-lg hover:bg-primary hover:text-white transition-colors"

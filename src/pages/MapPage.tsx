@@ -8,19 +8,20 @@ import { ArrowLeft, MapPin, Search } from 'lucide-react';
 import { BlurContainer } from '@/components/ui/BlurContainer';
 import { Input } from '@/components/ui/input';
 import { useNavigate } from 'react-router-dom';
+import { toast } from "sonner";
 
-// Sample locations that might be interesting to users
+// Sample locations that might be interesting to users (updated for India)
 const interestingLocations = [
-  { name: "Downtown", lng: -96.7970, lat: 32.7767 },
-  { name: "University", lng: -96.7500, lat: 32.7850 },
-  { name: "Tech District", lng: -96.8083, lat: 32.7825 },
-  { name: "Shopping Mall", lng: -96.8200, lat: 32.7650 },
+  { name: "Delhi", lng: 77.1025, lat: 28.7041 },
+  { name: "Mumbai", lng: 72.8777, lat: 19.0760 },
+  { name: "Bangalore", lng: 77.5946, lat: 12.9716 },
+  { name: "Chennai", lng: 80.2707, lat: 13.0827 },
 ];
 
 export default function MapPage() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
-  const [currentLocation, setCurrentLocation] = useState({ lng: -96.7970, lat: 32.7767 });
+  const [currentLocation, setCurrentLocation] = useState({ lng: 77.1025, lat: 28.7041 }); // Default to Delhi
   const [zoom, setZoom] = useState(12);
   const [userLocation, setUserLocation] = useState<{ lng: number, lat: number } | null>(null);
 
@@ -32,9 +33,11 @@ export default function MapPage() {
         setUserLocation({ lng: longitude, lat: latitude });
         setCurrentLocation({ lng: longitude, lat: latitude });
         setZoom(14);
+        toast.success("Location detected successfully");
       },
       (error) => {
         console.error('Error getting user location:', error);
+        toast.error("Couldn't get your location. Using default location.");
       }
     );
   }, []);
@@ -90,7 +93,7 @@ export default function MapPage() {
         
         {/* Nearby locations */}
         <div className="px-4 py-4">
-          <h2 className="text-lg font-semibold mb-3">Explore Nearby</h2>
+          <h2 className="text-lg font-semibold mb-3">Explore India</h2>
           <div className="grid grid-cols-2 gap-3">
             {filteredLocations.map((location, index) => (
               <BlurContainer 
@@ -99,6 +102,7 @@ export default function MapPage() {
                 onClick={() => {
                   setCurrentLocation({ lng: location.lng, lat: location.lat });
                   setZoom(15);
+                  toast.info(`Exploring ${location.name}`);
                 }}
               >
                 <div className="flex items-center">

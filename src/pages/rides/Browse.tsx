@@ -120,7 +120,10 @@ export default function Browse() {
         
         {/* Map overview */}
         <div className="px-4 py-3">
-          <MapView interactive={false} />
+          <MapView 
+            interactive={false} 
+            center={{ lat: 28.7041, lng: 77.1025 }} // Centered on Delhi
+          />
         </div>
         
         {/* Ride listings */}
